@@ -1,0 +1,249 @@
+[root@v-bst01 ansible]# cat 02-aio-inventory
+#Reference:
+## Variables: https://docs.openshift.com/container-platform/3.11/install/configuring_inventory_file.html
+## SSL : http://v1.uncontained.io/playbooks/installation/custom_certificates.html
+
+[OSEv3:vars]
+###=============================================================================
+## General Cluster Variables
+#
+ansible_ssh_user=root
+#ansible_ssh_pass=redhat.01
+#openshift_disable_check=memory_availability,disk_availability,docker_storage
+openshift_disable_check=memory_availability,disk_availability,docker_storage,package_update,package_availability,package_version,docker_storage_driver,docker_image_availability
+ansible_become=true
+ansible_become_user=root
+#ansible_ssh_private_key_file=/home/cloud-user/.ssh/id_rsa
+debug_level=2 #normal log (8 to log body-level API debugging information)
+#subscriptions={"infrastructure": ["8a85f98260c27fc50160c323263339ff"]}
+os_firewall_use_firewalld=False
+#openshift_master_dynamic_provisioning_enabled=True
+
+# Set this line to enable NFS
+openshift_enable_unsupported_configurations=True
+
+###=============================================================================
+## Prerequisite
+#
+container_runtime_docker_storage_setup_device=/dev/sdc
+container_runtime_docker_storage_type=overlay2
+###=============================================================================
+## OCP DEPLOYMENT MASTER/TOPOLOGY CONFIG
+#
+openshift_release=v3.11
+#openshift_image_tag=v3.11
+openshift_clock_enabled=true
+openshift_master_audit_config={"enabled": true, "auditFilePath": "audit.log", "maximumFileRetentionDays": 14, "maximumFileSizeMegabytes": 10, "maximumRetainedFiles": 4}
+openshift_deployment_type=openshift-enterprise
+openshift_master_cluster_method=native
+openshift_master_cluster_hostname=v-ocp311.openlab.com
+openshift_master_cluster_public_hostname=v-ocp311.openlab.com
+openshift_master_default_subdomain=apps.openlab.com
+openshift_master_bootstrap_auto_approve=true
+
+###=============================================================================
+## NETWORK / SDN
+#
+osm_cluster_network_cidr=10.128.0.0/14
+openshift_portal_net=172.30.0.0/16
+os_sdn_network_plugin_name='redhat/openshift-ovs-networkpolicy'
+openshift_master_api_port=8443
+openshift_master_console_port=8443
+
+###=============================================================================
+##  SSL
+#
+openshift_master_cert_expire_days=1825  #5 añaprox
+#openshift_master_overwrite_named_certificates=true
+#openshift_master_named_certificates=[{"certfile": "{{inventory_dir}}/support/ssl/cloud.cnad.io.crt", "keyfile": "{{inventory_dir}}/support/ssl/cloud.cnad.io-decrtp.key", "cafile": "{{inventory_dir}}/support/ssl/cloud.cnad.io-ca.crt"}]
+openshift_hosted_registry_cert_expire_days=1825
+openshift_ca_cert_expire_days=1825  #5 añaprox
+openshift_node_cert_expire_days=1825  #5 añaprox
+etcd_ca_default_days=1825  #5 añaprox
+openshift_certificate_expiry_warning_days=1460  #5 añaprox
+
+###=============================================================================
+## AUTHENTICATION
+#
+#openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'},{'name': 'ldap_provider', 'challenge': 'true', 'login': 'true', 'kind': 'LDAPPasswordIdentityProvider','attributes': {'id': ['dn'], 'name': ['cn'], 'preferredUsername': ['developer001@example.net']},'bindDN': 'OU=chile,DC=example,DC=net','bindPassword': 'Temporal2019','insecure': 'false','url': 'ldap://v-ads01.example.net:389/ou=chile,dc=example,dc=net?uid'}]
+#openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'},{'name': 'ldap_provider', 'challenge': 'true', 'login': 'true', 'kind': 'LDAPPasswordIdentityProvider','attributes': {'id': ['sAMAccountName'],'preferredUsername': ['sAMAccountName']},'bindDN': 'CN=developer001,OU=chile,DC=example,DC=net','bindPassword': 'Temporal2019','insecure': 'true','url': 'ldap://v-ads01.example.net:389/dc=example,dc=net?sAMAccountName'}]
+
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
+#openshift_master_htpasswd_users={'admin': '$apr1$aDlgViae$Z//suRvPOYU.fHFBfjX9z1', 'developer': '$apr1$F6iXmBPQ$3l4Nv3dNbMrf7/TbupkLl0'}
+openshift_master_htpasswd_file=/root/userocp.txt
+#openshift_master_manage_htpasswd=true
+
+
+###=============================================================================
+## ROUTER
+#
+#default
+openshift_router_selector='node-role.kubernetes.io/infra=true'
+## Don't forget to execute support/ssl/extract-certs.sh to get the certificate from the pfx/p12 file
+#openshift_hosted_router_certificate={"certfile": "{{inventory_dir}}/support/ssl/apps.cnad.io.crt", "keyfile": "{{inventory_dir}}/support/ssl/apps.cnad.io.key", "cafile": "{{inventory_dir}}/support/ssl/apps.cnad.io-ca.crt"}
+
+###=============================================================================
+## REDHAT REGISTRY
+#
+oreg_url="registry.redhat.io/openshift3/ose-${component}:${version}"
+oreg_auth_user="6611514|itc-lab"
+oreg_auth_password="eyJhbGciOiJSUzUxMiJ9.eyJzdWIiOiIwYzQ2M2E1MjNhMDk0OWE1Yjc2OGFlZTc2MDcwM2U3MiJ9.Dya2ZVeufCclilFlDpLFmVDmtdAbKgOQ5PLCHOncsKBRGvvaEdlkQKBFy8pxe9gLJDr4l1jo3awf5oNbHTLJMs0haUnYMvQ73Hjh0_ihQLbitkfxuZXm6Uzg010Sex9SnmbY5qkJ0bpBKZQtdXNysOZr8ZwYNh1x-DSftsLCzv-3UEjvDabCvb5vobTOhP3lcZ326cA0Sp8i7d558Yg6y4PkgRZbcFEzU9fvztBfAWrgqjYGpAklqID2UBd3mfTNTF3jb0AEKUFpCug00MGfg1rOqNrZ8fKSGuFoKWoRarTS-86oJATxsSIeQwVbqpUkE4lurOLSk5UAlKhQ4_RChG6vnkAvypZthK57M0jFOKd7o8ZET7jV_OLp4B4Ow6FfYdAXVV5GLN1LChSk8hdjCh0EKMELjkLq2HAiU3HvrwMcqT0ARF2lRxYATxnTwuzV4wCeta1iGavtORdaRjxI_6NTeKjVxCO2x8m0I8nwAVinaC3gg7enjUT1fQuoqhwUnM_6g-UEliSclEfbyI5tsvx1aa78wUF4zO-ldJ5PzeiBYYaoPLzuqJWO66Es2PucJ_DzZNg4LqrKLEh179ggqyDaXWKGH-XC3moazYBFg_n4BDdLNz8ikvmp-JWyq8SM8NrjzUoCL0YQPiGn-Hb-OPyXUfd8AsNsNt1Gi-Mle7w"
+
+###=============================================================================
+## INTERNAL OPENSHIFT REGISTRY
+#
+#openshift_hosted_registry_storage_kind=nfs
+#openshift_hosted_registry_storage_volume_size=70Gi
+#openshift_registry_selector='node-role.kubernetes.io/infra=true'
+#openshift_hosted_registry_replicas=1
+#openshift_hosted_manage_registry=true
+
+openshift_hosted_registry_replicas=1
+openshift_hosted_registry_pullthrough=true
+openshift_hosted_registry_acceptschema2=true
+openshift_hosted_registry_enforcequota=true
+
+openshift_hosted_registry_storage_kind=nfs
+openshift_hosted_registry_storage_access_modes=['ReadWriteMany']
+openshift_hosted_registry_storage_nfs_directory=/srv/nfs
+openshift_hosted_registry_storage_nfs_options='*(rw,root_squash)'
+openshift_hosted_registry_storage_volume_name=registry
+openshift_hosted_registry_storage_volume_size=20Gi
+
+###=============================================================================
+## CLUSTER MONITORING (PROMETHEUS)
+#
+openshift_cluster_monitoring_operator_install=false
+openshift_cluster_monitoring_operator_prometheus_storage_capacity=20Gi
+openshift_cluster_monitoring_operator_alertmanager_storage_capacity=2Gi
+openshift_cluster_monitoring_operator_node_selector={"node-role.kubernetes.io/infra":"true"}
+openshift_cluster_monitoring_operator_prometheus_storage_enabled=true
+openshift_cluster_monitoring_operator_alertmanager_storage_enabled=true
+
+###=============================================================================
+## METRICS
+#
+openshift_metrics_install_metrics=false
+#openshift_metrics_cassandra_storage_type=dynamic
+# openshift_metrics_cassandra_storage_type=emptydir
+# openshift_metrics_cassandra_requests_memory=1Gi
+# openshift_metrics_cassandra_pvc_size=5Gi
+# openshift_metrics_cassandra_nodeselector={"node-role.kubernetes.io/infra":"true"}
+# openshift_metrics_cassandra_limits_memory=2Gi
+# openshift_metrics_cassandra_replicas=1
+# openshift_metrics_hawkular_limits_memory=2Gi
+# openshift_metrics_hawkular_nodeselector={"node-role.kubernetes.io/infra":"true"}
+# openshift_metrics_hawkular_replicas=1
+# openshift_metrics_hawkular_requests_memory=1Gi
+# openshift_metrics_heapster_limits_memory=2Gi
+# openshift_metrics_heapster_requests_memory=1Gi
+# openshift_metrics_heapster_nodeselector={"node-role.kubernetes.io/infra":"true"}
+# openshift_metrics_duration=3 # Default
+# openshift_metrics_resolution=10s # Default
+
+openshift_metrics_hawkular_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_metrics_cassandra_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_metrics_heapster_nodeselector={"node-role.kubernetes.io/infra":"true"}
+
+openshift_metrics_duration=2
+
+openshift_metrics_storage_kind=nfs
+openshift_metrics_storage_access_modes=['ReadWriteOnce']
+openshift_metrics_storage_nfs_directory=/srv/nfs
+openshift_metrics_storage_nfs_options='*(rw,root_squash)'
+openshift_metrics_storage_volume_name=metrics
+openshift_metrics_storage_volume_size=10Gi
+openshift_metrics_storage_labels={'storage': 'metrics'}
+openshift_metrics_cassandra_pvc_storage_class_name=''
+
+
+# https://github.com/openshift/origin-metrics/issues/429
+#openshift_metrics_cassandra_image="registry.access.redhat.com/openshift3/metrics-cassandra:v3.10"
+#openshift_metrics_hawkular_metrics_image="registry.access.redhat.com/openshift3/metrics-hawkular-metrics:v3.10"
+#openshift_metrics_heapster_image="registry.access.redhat.com/openshift3/metrics-heapster:v3.10"
+# # https://github.com/openshift/origin-metrics/issues/429#issuecomment-417124646
+#openshift_metrics_schema_installer_image="registry.access.redhat.com/openshift3/metrics-schema-installer:v3.10"
+
+###=============================================================================
+## LOGGING
+
+openshift_logging_install_logging=false
+# openshift_logging_es_pvc_dynamic=True
+# openshift_logging_es_pvc_storage_class_name=glusterfs-ocs-storage-block
+# openshift_logging_es_pvc_size=5Gi
+openshift_logging_es_cluster_size=1
+openshift_logging_es_memory_limit=2Gi
+openshift_logging_es_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_logging_es_number_of_replicas=1
+openshift_logging_curator_default_days=4
+openshift_logging_curator_run_hour=03
+openshift_logging_curator_run_minute=00
+openshift_logging_curator_run_timezone="America/Santiago"
+openshift_logging_curator_nodeselector={"node-role.kubernetes.io/infra":"true"}
+openshift_logging_kibana_memory_limit=2Gi
+openshift_logging_kibana_nodeselector={"node-role.kubernetes.io/infra":"true"}
+
+openshift_logging_storage_kind=nfs
+openshift_logging_storage_access_modes=['ReadWriteOnce']
+openshift_logging_storage_nfs_directory=/srv/nfs
+openshift_logging_storage_nfs_options='*(rw,root_squash)'
+openshift_logging_storage_volume_name=logging
+openshift_logging_storage_volume_size=10Gi
+openshift_logging_storage_labels={'storage': 'logging'}
+openshift_logging_es_pvc_storage_class_name=
+
+openshift_logging_install_eventrouter=True
+
+###=============================================================================
+## Service Catalogue Vars
+#
+openshift_enable_service_catalog=true
+
+###=============================================================================
+## Openshift Ansible Broker
+#
+ansible_service_broker_install=true
+ansible_service_broker_node_selector={"node-role.kubernetes.io/infra":"true"}
+
+openshift_hosted_etcd_storage_kind=nfs
+openshift_hosted_etcd_storage_nfs_options="*(rw,root_squash,sync,no_wdelay)"
+openshift_hosted_etcd_storage_nfs_directory=/srv/nfs
+openshift_hosted_etcd_storage_volume_name=etcd-vol2
+openshift_hosted_etcd_storage_access_modes=["ReadWriteOnce"]
+openshift_hosted_etcd_storage_volume_size=1G
+openshift_hosted_etcd_storage_labels={'storage': 'etcd'}
+
+ansible_service_broker_local_registry_whitelist=['.*-apb$']
+
+###=============================================================================
+## Openshift Template Service Broker
+#
+template_service_broker_install=true
+template_service_broker_selector={"node-role.kubernetes.io/infra":"true"}
+openshift_template_service_broker_namespaces=['openshift','ocp-customer-templates']
+
+###=============================================================================
+## CLUSTER CONSOLE (for admins users)
+#
+openshift_console_install=true
+
+[OSEv3:children]
+masters
+nodes
+etcd
+nfs
+
+[nfs]
+v-ocp311.openlab.com
+
+# host group for masters
+[masters]
+v-ocp311.openlab.com
+
+# host group for etcd
+[etcd]
+v-ocp311.openlab.com
+
+# host group for nodes, includes region info
+[nodes]
+v-ocp311.openlab.com  openshift_node_group_name='node-config-all-in-one'
